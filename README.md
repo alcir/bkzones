@@ -8,7 +8,7 @@ It uses zfs snapshot, zfs send, zfs receive. And it uses SSH to transfer the stu
 Warning
 =======
 
-this script is very far away from to be a reliable and secure script.
+This script is **very far** from being reliable and secure.
 
 Use at your own risk!
 
