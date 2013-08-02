@@ -1,7 +1,7 @@
 bkzones
 =======
 
-Script to backup SmartOS VMs (KVM and OS).
+Script to backup SmartOS VMs (KVM and OS zones).
 
 It uses zfs snapshot, zfs send, zfs receive. And it uses SSH to transfer the stuff.
 
