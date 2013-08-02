@@ -10,7 +10,7 @@ Warning
 
 This script is **very far** from being reliable and secure.
 
-Use at your own risk!
+Use it at your own risk!
 
 Installation
 ------------
