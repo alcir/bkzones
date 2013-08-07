@@ -41,3 +41,8 @@ Like:
 - ```bkdestdir="/zones/backup/indexes_and_conf"``` on the destination host the destination 
 - ```sshparam="root@bkdestserver"``` user@destinationhost and any ssh parameter
 - ```destinationpool="zones/backup"``` the destination zfs dataset (on the remote host)
+
+## Nagios passive check
+
+Passing ```-n``` to the script, you can invoke the external script ```nagios_nsca.sh``` to send a passive check to Nagios, using the send_nsca command.<br />
+Edit it to suit your needs.
