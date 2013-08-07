@@ -1,19 +1,16 @@
-bkzones
-=======
+# bkzones
 
 Script to backup SmartOS VMs (KVM and OS zones).
 
 It uses zfs snapshot, zfs send, zfs receive. And it uses SSH to transfer the stuff.
 
-Warning
-=======
+## Warning
 
 This script is **very far** from being reliable and secure.
 
 Use it at your own risk!
 
-Installation
-------------
+## Installation
 
 On the global zone make a directory under /opt/custom (or whatever persistent directory)
 
@@ -34,8 +31,7 @@ On the destination host, create a directory under the directory of the new zfs
 
 such directory will contain the index file ```/etc/zones/index``` of each GZ and the ```/etc/zones/*.xml``` files of each backed up zone.
 
-Configuration
-------------
+## Configuration
 
 Edit the script and change the variables in order to reflect your environment.<br />
 Like:
