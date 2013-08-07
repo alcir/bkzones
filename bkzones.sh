@@ -1,15 +1,17 @@
 #!/bin/bash
 
-# Ver 0.0.2
+# Ver 0.0.3
 
 #
 # Var
 #
 
-workdir="/opt/custom/bk"
-bkdestserver="yourbackup.server.host"
+date
 
-bkdestdir="/zones/backup/indexes_and_conf"
+workdir="/opt/custom/bk"
+bkdestserver="iperione.hypervisor.pi.fgm"
+
+bkdestdir="/zones/backup/indici_e_conf"
 bkdestdirxml="$bkdestdir/xml/`hostname`/"
 bkdestdirindex="$bkdestdir/index/`hostname`/"
 
@@ -23,23 +25,34 @@ TODAY=`date +%Y%m%d`
 #YESTERDAY=`perl -e 'use POSIX qw(strftime); print strftime "%Y%m%d",localtime(time()- 3600*24);'`
 YESTERDAY=`TZ=GMT+24 date +%Y%m%d`;
 
-YESTERDAY=$1
-TODAY=$2
+NAGIOS=0
 
+while getopts ":y:t:nh" opt; do
+  case $opt in
+    n)
+      NAGIOS=1
+      ;;
+    t)
+      TODAY=$OPTARG
+      ;;
+    y)
+      YESTERDAY=$OPTARG
+      ;;
+    \?)
+      echo "Invalid option: -$OPTARG" >&2
+      ;;
+    :)
+      echo "Option -$OPTARG requires an argument." >&2
+      ;;
+  esac
+done
+
+echo Today $TODAY Yesterday $YESTERDAY Nagios $NAGIOS
 
 #
 # Functions
 #
 
-pacco() {
-echo ooo
-}
-
-cane() {
- pacco
- EL=$?
- return $EL
-}
 
 alreadyexists() {
   if zfs list -H -o name -t snapshot | sort | grep "$1" > /dev/null
@@ -276,9 +289,23 @@ done < <(vmadm list -p -o uuid)
 if [ $FINALEL -ne 0 ]
 then
 
-   echo -e "\nThere were problems in one or more operations\n"
+   MESSAGE="There were problems in one or more operations"
+
+   echo -e "\n$MESSAGE\n"
 
 else
 
-   echo -e "\nNo error reported\n"
+   MESSAGE="No errors reported"
+
+   echo -e "\n$MESSAGE\n"
+
+fi
+
+if [ $NAGIOS -eq 1 ]
+then
+
+   echo -e "\nInvoking Nagios NSCA\n"
+
+   $workdir/nagios_nsca.sh $FINALEL "$MESSAGE"
+
 fi
