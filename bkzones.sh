@@ -6,7 +6,7 @@
 # Var
 #
 
-date
+log "Start `date`"
 
 workdir="/opt/custom/bk"
 bkdestserver="iperione.hypervisor.pi.fgm"
@@ -309,3 +309,5 @@ then
    $workdir/nagios_nsca.sh $FINALEL "$MESSAGE"
 
 fi
+
+log "End `date`"
