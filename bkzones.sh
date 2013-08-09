@@ -1,14 +1,15 @@
 #!/bin/bash
 
-# Ver 0.0.3
+# Ver 0.0.4
+
+log "Start `date`"
 
 #
 # Var
 #
 
-log "Start `date`"
+workdir=$(cd `dirname $0` && pwd)
 
-workdir="/opt/custom/bk"
 bkdestserver="iperione.hypervisor.pi.fgm"
 
 bkdestdir="/zones/backup/indici_e_conf"
@@ -25,9 +26,15 @@ TODAY=`date +%Y%m%d`
 #YESTERDAY=`perl -e 'use POSIX qw(strftime); print strftime "%Y%m%d",localtime(time()- 3600*24);'`
 YESTERDAY=`TZ=GMT+24 date +%Y%m%d`;
 
+logfile=$workdir/log/$TODAY.log
+
+if [ ! -d "$workdir/log" ]; then
+  mkdir $workdir/log
+fi
+
 NAGIOS=0
 
-while getopts ":y:t:nh" opt; do
+while getopts ":y:t:nvh" opt; do
   case $opt in
     n)
       NAGIOS=1
@@ -38,20 +45,54 @@ while getopts ":y:t:nh" opt; do
     y)
       YESTERDAY=$OPTARG
       ;;
+    v)
+      _V=1
+      ;;
     \?)
       echo "Invalid option: -$OPTARG" >&2
+      exit
       ;;
     :)
       echo "Option -$OPTARG requires an argument." >&2
+      exit
       ;;
   esac
 done
 
-echo Today $TODAY Yesterday $YESTERDAY Nagios $NAGIOS
-
 #
 # Functions
 #
+
+#function log () {
+#
+#    if [[ $_V -eq 1 ]]; then
+#        echo -e "$@"
+#    fi
+#
+#    echo -e "$@" >> $logfile
+#
+#}
+
+function log()
+{
+   if [ "$1" ]
+   then
+      data="$1"
+      echo "[$(date +"%D %T")] $data">> $logfile
+      if [[ $_V -eq 1 ]]; then
+         echo "[$(date +"%D %T")] $data" 
+      fi
+
+   else
+      while IFS='' read -r data
+      do
+         echo "[$(date +"%D %T")] $data" >> $logfile
+         if [[ $_V -eq 1 ]]; then
+      echo "[$(date +"%D %T")] $data"
+         fi
+      done
+   fi
+}
 
 
 alreadyexists() {
@@ -66,7 +107,7 @@ alreadyexists() {
 
 remoteexists() {
 
-  echo -e "Checking if it is the first time we zfs send to remote $1"
+  log "Checking if it is the first time we zfs send to remote $1"
   ssh $sshparam zfs list $1 </dev/null &>/dev/null
   EL=$?
 
@@ -95,37 +136,39 @@ zfssend() {
   zfs=$1
   strip=`echo $zfs | sed 's/^zones\///g'`
 
-  echo -e "Checking if remote $zfs ($strip) exists"
+  log "Checking if remote $zfs ($strip) exists"
 
   if remoteexists $destinationpool/$strip
   then
 
-    echo "Maybe this is the first time transfer for $destinationpool/$strip"
-    echo "Let's proceed with non incremental send"
+    log "Maybe this is the first time transfer for $destinationpool/$strip"
+    log "Let's proceed with non incremental send"
 
-    zfs send $zfs@$TODAY | ssh $sshparam zfs receive -v $destinationpool/$strip
+    zfs send $zfs@$TODAY | ssh $sshparam zfs receive -v $destinationpool/$strip &> >(log)
     EL=$?
-    if [ $EL -ne 0 ]; then echo Problem; return $EL; fi
+
+    if [ $EL -ne 0 ]; then log Problem; return $EL; fi
 
   else 
 
-    echo "This is not the first send, going on"
+    log "This is not the first send, going on"
 
     if zfs list -H -o name -t snapshot | sort | grep "$zfs@$YESTERDAY" > /dev/null; then
-      echo "Yesterday snapshot, $zfs@$YESTERDAY, exists lets proceed with backup"
+      log "Yesterday snapshot, $zfs@$YESTERDAY, exists lets proceed with backup"
   
-      zfs send -i $zfs@$YESTERDAY $zfs@$TODAY | ssh $sshparam zfs receive -Fv $destinationpool/$strip
+      zfs send -i $zfs@$YESTERDAY $zfs@$TODAY | ssh $sshparam zfs receive -Fv $destinationpool/$strip &> >(log)
       EL=$?
-      if [ $EL -ne 0 ]; then echo Problem; return $EL; fi
+
+      if [ $EL -ne 0 ]; then log Problem; return $EL; fi
    
-      echo "Backup completed, destroying yesterday snapshot"
-      zfs destroy -r $zfs@$YESTERDAY
+      log "Backup completed, destroying yesterday snapshot"
+      zfs destroy -r $zfs@$YESTERDAY &> >(log)
       EL=$?
-      if [ $EL -ne 0 ]; then echo Problem; return $EL; fi
+      if [ $EL -ne 0 ]; then log Problem; return $EL; fi
       
     else
   
-      echo "Missing yesterday snapshot $zfs@$YESTERDAY"
+      log "Missing yesterday snapshot $zfs@$YESTERDAY"
       return 100
   
     fi
@@ -138,95 +181,95 @@ backupzfs() {
   
   zoneuid=$1
 
-  echo -e "backupzfs called for zoneuid $zoneuid\n"
+  log "backupzfs called for zoneuid $zoneuid"
 
-  echo -e "\nGet zfs_filesystem"
+  log "Get zfs_filesystem"
 
   zfs_filesystem=`vmadm get $zoneuid | json zfs_filesystem`
 
-  echo -e "\nWorking on zfs_filesystem $zfs_filesystem"
+  log "Working on zfs_filesystem $zfs_filesystem"
 
   if alreadyexists $zfs_filesystem@$TODAY
   then
 
-    echo "zfs_filesystem snapshot, $zfs_filesystem@$TODAY already exists"
+    log "zfs_filesystem snapshot, $zfs_filesystem@$TODAY already exists"
     return 101
 
   else
 
-    echo "Taking today snapshot of $zfs_filesystem@$TODAY"
+    log "Taking today snapshot of $zfs_filesystem@$TODAY"
     zfs snapshot -r $zfs_filesystem@$TODAY
     EL=$?
-    if [ $EL -ne 0 ]; then echo Problem; return $EL; fi
+    if [ $EL -ne 0 ]; then log Problem; return $EL; fi
 
-    echo ". zfssend $zfs_filesystem"
+    log ". zfssend $zfs_filesystem"
     zfssend $zfs_filesystem
     EL=$?
-    if [ $EL -ne 0 ]; then echo Problem; return $EL; fi
+    if [ $EL -ne 0 ]; then log Problem; return $EL; fi
 
   fi
 
-  echo -e "\nGet disks"
+  log "Get disks"
 
   vmadm get $zoneuid | json disks | grep zfs_filesystem|awk -F"\"" '{print $4}' | while read disk
   do
 
-    echo -e "\nWorking on disk $disk"
+    log "Working on disk $disk"
 
     if alreadyexists $disk@$TODAY
     then
 
-      echo "disk snapshot, $disk@$TODAY already exists"
+      log "disk snapshot, $disk@$TODAY already exists"
       return 102
 
     else
 
-      echo "Taking today snapshot of $disk@$TODAY"
+      log "Taking today snapshot of $disk@$TODAY"
       zfs snapshot -r $disk@$TODAY
       EL=$?
-      if [ $EL -ne 0 ]; then echo Problem; return $EL; fi
+      if [ $EL -ne 0 ]; then log Problem; return $EL; fi
 
-      echo ".. zfssend $disk"
+      log ".. zfssend $disk"
       zfssend $disk
       EL=$?
-      if [ $EL -ne 0 ]; then echo Problem; return $EL; fi
+      if [ $EL -ne 0 ]; then log Problem; return $EL; fi
 
     fi
 
   done
 
-  echo -e "\nGet datasets"
+  log "Get datasets"
 
   vmadm get $zoneuid | json datasets | json -a | while read dataset
   do
 
-    echo -e "\nWorking on dataset $dataset"
+    log "Working on dataset $dataset"
 
     if alreadyexists $dataset@$TODAY
     then
   
-      echo "dataset snapshot, $dataset@$TODAY already exists"
+      log "dataset snapshot, $dataset@$TODAY already exists"
       return 103
   
     else
 
-      echo "Taking today snapshot of $dataset@$TODAY"
+      log "Taking today snapshot of $dataset@$TODAY"
       zfs snapshot -r $dataset@$TODAY
       EL=$?
-      echo "zfs snapshot -r $dataset@$TODAY errorlevel $EL"
-      if [ $EL -ne 0 ]; then echo Problem; return $EL; fi
+      log "zfs snapshot -r $dataset@$TODAY errorlevel $EL"
+      if [ $EL -ne 0 ]; then log Problem; return $EL; fi
 
-      echo "... zfssend $dataset"
+      log "... zfssend $dataset"
       zfssend $dataset
       EL=$?
-      echo "zfssend $dataset errorlevel $EL"
-      if [ $EL -ne 0 ]; then echo Problem; return $EL; fi
+      log "zfssend $dataset errorlevel $EL"
+      if [ $EL -ne 0 ]; then log Problem; return $EL; fi
 
     fi
 
   done
 
-  echo -e "\n- End backupzfs for $zoneuid\n\n"
+  log "- End backupzfs for $zoneuid"
 
 }
 
@@ -234,14 +277,16 @@ backupzfs() {
 # Start
 #
 
-echo rsync /etc/zones/index
+log "Today $TODAY Yesterday $YESTERDAY Nagios $NAGIOS"
 
-rsync -arp -e "ssh -i /root/.ssh/id_rsa" /etc/zones/index $bkdestserver:$bkdestdirindex
+log "rsync /etc/zones/index to $bkdestserver:$bkdestdirindex"
+
+rsync -arp -e "ssh -i /root/.ssh/id_rsa" /etc/zones/index $bkdestserver:$bkdestdirindex &> >(log)
 EL=$?
 
-echo errorlevel $EL
+log "errorlevel $EL"
 
-echo -e "-------\n\n"
+log "-------"
 
 FINALEL=0
 
@@ -255,21 +300,21 @@ do
   if [ $EL -ne 0 ]
   then
 
-    echo -e "Working on $xuuid - `vmadm list -p -o alias uuid=$xuuid`\n"
+    log "Working on $xuuid - `vmadm list -p -o alias uuid=$xuuid`"
 
-    echo rsync xml
+    log "rsync xml to $bkdestserver:$bkdestdirxml"
 
-    rsync -arp -e "ssh -i /root/.ssh/id_rsa" /etc/zones/$xuuid.xml $bkdestserver:$bkdestdirxml
+    rsync -arp -e "ssh -i /root/.ssh/id_rsa" /etc/zones/$xuuid.xml $bkdestserver:$bkdestdirxml &> >(log)
     EL=$?
 
-    echo errorlevel $EL
+    log "errorlevel $EL"
 
-    echo -e "\n+ Now working on zone's zfs"
+    log "+ Now working on zone's zfs"
 
     backupzfs $xuuid
     ELLL=$?
 
-    echo "End. Errorlevel $ELLL"
+    log "End. Errorlevel $ELLL"
 
     if [ $ELLL -ne 0 ]
     then
@@ -278,11 +323,11 @@ do
 
   else
 
-    echo $xuuid excluded
+    log "$xuuid excluded"
 
   fi
 
-  echo -e "\n--------\n\n"
+  log "--------"
 
 done < <(vmadm list -p -o uuid)
 
@@ -291,22 +336,22 @@ then
 
    MESSAGE="There were problems in one or more operations"
 
-   echo -e "\n$MESSAGE\n"
+   log "$MESSAGE"
 
 else
 
    MESSAGE="No errors reported"
 
-   echo -e "\n$MESSAGE\n"
+   log "$MESSAGE"
 
 fi
 
 if [ $NAGIOS -eq 1 ]
 then
 
-   echo -e "\nInvoking Nagios NSCA\n"
+   log "Invoking Nagios NSCA"
 
-   $workdir/nagios_nsca.sh $FINALEL "$MESSAGE"
+   log "`$workdir/nagios_nsca.sh $FINALEL "$MESSAGE"`"
 
 fi
 
