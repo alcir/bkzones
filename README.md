@@ -46,3 +46,7 @@ Like:
 
 Passing ```-n``` to the script, you can invoke the external script ```nagios_nsca.sh``` to send a passive check to Nagios, using the send_nsca command.<br />
 Edit it to suit your needs.
+
+## Logging
+
+Passing ```-v``` to the script, logs are displayed on standard output. Without this argument, only the log file is produced.
