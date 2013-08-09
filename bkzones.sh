@@ -1,8 +1,6 @@
 #!/bin/bash
 
-# Ver 0.0.4
-
-log "Start `date`"
+# Ver 0.0.5
 
 #
 # Var
@@ -277,7 +275,11 @@ backupzfs() {
 # Start
 #
 
+log "Start `date`"
+
 log "Today $TODAY Yesterday $YESTERDAY Nagios $NAGIOS"
+
+log " "
 
 log "rsync /etc/zones/index to $bkdestserver:$bkdestdirindex"
 
