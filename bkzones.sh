@@ -1,6 +1,7 @@
 #!/bin/bash
 
-# Ver 0.0.5
+# Ver 0.0.6
+
 
 #
 # Var
@@ -283,55 +284,65 @@ log " "
 
 log "rsync /etc/zones/index to $bkdestserver:$bkdestdirindex"
 
-rsync -arp -e "ssh -i /root/.ssh/id_rsa" /etc/zones/index $bkdestserver:$bkdestdirindex &> >(log)
+rsync -arp -e "ssh -i /root/.ssh/id_rsa" /etc/zones/index $bkdestserver:$bkdestdirindex 2> >(log)
+
 EL=$?
 
 log "errorlevel $EL"
 
 log "-------"
 
-FINALEL=0
+if [ $EL -ne 0 ]
+then 
+  log Problem rsync index $EL
+  FINALEL=$EL
+else
+  FINALEL=0
+fi
 
-#vmadm list -p -o uuid | while read xuuid
-while read xuuid
-do
+if [ $FINALEL -eq 0 ]
+then
+  #vmadm list -p -o uuid | while read xuuid
+  while read xuuid
+  do
 
-  grep $xuuid $excludedlist 2>&1>/dev/null
-  EL=$?
-
-  if [ $EL -ne 0 ]
-  then
-
-    log "Working on $xuuid - `vmadm list -p -o alias uuid=$xuuid`"
-
-    log "rsync xml to $bkdestserver:$bkdestdirxml"
-
-    rsync -arp -e "ssh -i /root/.ssh/id_rsa" /etc/zones/$xuuid.xml $bkdestserver:$bkdestdirxml &> >(log)
+    grep $xuuid $excludedlist 2>&1>/dev/null
     EL=$?
-
-    log "errorlevel $EL"
-
-    log "+ Now working on zone's zfs"
-
-    backupzfs $xuuid
-    ELLL=$?
-
-    log "End. Errorlevel $ELLL"
-
-    if [ $ELLL -ne 0 ]
+  
+    if [ $EL -ne 0 ]
     then
-      let FINALEL=1
+  
+      log "Working on $xuuid - `vmadm list -p -o alias uuid=$xuuid`"
+
+      log "rsync xml to $bkdestserver:$bkdestdirxml"
+
+      rsync -arp -e "ssh -i /root/.ssh/id_rsa" /etc/zones/$xuuid.xml $bkdestserver:$bkdestdirxml &> >(log)
+      EL=$?
+
+      log "errorlevel $EL"
+
+      log "+ Now working on zone's zfs"
+
+      backupzfs $xuuid
+      ELLL=$?
+
+      log "End. Errorlevel $ELLL"
+
+      if [ $ELLL -ne 0 ]
+      then
+        let FINALEL=1
+      fi
+
+    else
+
+      log "$xuuid excluded"
+
     fi
 
-  else
+    log "--------"
 
-    log "$xuuid excluded"
-
-  fi
-
-  log "--------"
-
-done < <(vmadm list -p -o uuid)
+  done < <(vmadm list -p -o uuid)
+fi
 
 if [ $FINALEL -ne 0 ]
 then
