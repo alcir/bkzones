@@ -1,5 +1,7 @@
 #!/bin/bash
 
+#List all the ZFS file systems associated to all the virtual machines
+
 while read xuuid
 do
 
