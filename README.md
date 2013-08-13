@@ -1,6 +1,6 @@
 # bkzones
 
-Script to backup SmartOS VMs (KVM and OS zones).
+This is a script to backup SmartOS VMs (KVM and OS zones).
 
 It uses zfs snapshot, zfs send, zfs receive. And it uses SSH to transfer the stuff.
 
@@ -16,7 +16,7 @@ On the global zone make a directory under /opt/custom (or whatever persistent di
 
 ```mkdir /opt/custom/bk```
 
-Copy the shell script inside such dir.<br />
+Copy the shell scripts (bkzones.sh, bkzones.conf, nagios_nsca.sh, nagios_nsca.conf) inside such dir.<br />
 Create a file called ```excluded``` even if you plan to don't use it.
 
 ```excluded``` file will contain all the uuid of zones and KVM machines you don't want to backup
@@ -44,7 +44,9 @@ Like:
 ## Nagios passive check
 
 Passing ```-n``` to the script, you can invoke the external script ```nagios_nsca.sh``` to send a passive check to Nagios, using the send_nsca command.<br />
-Edit it to suit your needs.
+Edit ```nagios_nsca.conf``` and ```send_nsca.cfg``` to suit your needs.
+
+You must have a working send_nsca environment (see [this post](http://blogoless.blogspot.it/2013/08/using-sendnsca-from-smartos-global-zone.html) for a working setup).
 
 ## Logging
 
