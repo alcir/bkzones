@@ -33,14 +33,13 @@ such directory will contain the index file ```/etc/zones/index``` of each GZ and
 
 ## Configuration
 
-Edit the script and change the variables in order to reflect your environment.<br />
+Edit the bkzones.conf file and change the variables in order to reflect your environment.<br />
 Like:
 
-- ```workdir="/opt/custom/bk"``` where is the script
 - ```bkdestserver="yourbackup.server.host"``` the destination host (via SSH)
 - ```bkdestdir="/zones/backup/indexes_and_conf"``` on the destination host the destination 
 - ```sshparam="root@bkdestserver"``` user@destinationhost and any ssh parameter
-- ```destinationpool="zones/backup"``` the destination zfs dataset (on the remote host)
+- ```destinationpool="zones/backup"``` the destination zfs dataset (on the remote host, see above)
 
 ## Nagios passive check
 
@@ -49,4 +48,4 @@ Edit it to suit your needs.
 
 ## Logging
 
-Passing ```-v``` to the script, logs are displayed on standard output. Without this argument, only the log file is produced.
+Passing ```-v``` to the script, logs are also displayed on standard output. Without this argument, only the log file is produced.
