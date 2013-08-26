@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Ver 0.0.7
+# Ver 0.0.8
 
 
 #
@@ -34,8 +34,11 @@ fi
 
 NAGIOS=0
 
-while getopts ":y:t:nvh" opt; do
+while getopts ":o:y:t:nvh" opt; do
   case $opt in
+    o)
+      ONLYFILE=$OPTARG
+      ;;
     n)
       NAGIOS=1
       ;;
@@ -58,6 +61,8 @@ while getopts ":y:t:nvh" opt; do
       ;;
   esac
 done
+
+echo $ONLYFILE
 
 #
 # Functions
@@ -159,8 +164,10 @@ zfssend() {
 
     log "...This is not the first send, going on"
 
+
     if zfs list -H -o name -t snapshot | sort | grep "$zfs@$YESTERDAY" > /dev/null; then
       log "...Yesterday snapshot, $zfs@$YESTERDAY, exists lets proceed with backup"
+echo " --- zfs send -i $zfs@$YESTERDAY $zfs@$TODAY | ssh $sshparam zfs receive -Fv $destinationpool/$strip"
       zfs send -i $zfs@$YESTERDAY $zfs@$TODAY | ssh $sshparam zfs receive -Fv $destinationpool/$strip &> >(log)
       EL=$?
 
@@ -368,9 +375,28 @@ log "-------"
 if [ $FINALEL -eq 0 ]
 then
   #vmadm list -p -o uuid | while read xuuid
+
+  if [[ -z $ONLYFILE ]]
+  then
+
+    uuidtodo="vmadm list -p -o uuid"
+
+  else
+
+    if [ -f $ONLYFILE ]
+    then
+      uuidtodo="cat $ONLYFILE"
+    else
+      uuidtodo="cat /dev/null"
+      MESSAGE="$ONLYFILE doesn't exist"
+      let FINALEL=1
+      log "$MESSAGE"
+    fi
+
+  fi
+
   while read xuuid
   do
-
 
     grep $xuuid $excludedlist 2>&1>/dev/null
     EL=$?
@@ -413,7 +439,7 @@ then
 
     log "-------"
 
-  done < <(vmadm list -p -o uuid)
+  done < <($uuidtodo)
 fi
 
 if [ $FINALEL -ne 0 ]
