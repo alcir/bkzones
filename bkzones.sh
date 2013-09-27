@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Ver 0.0.8
+# Ver 0.0.9
 
 
 #
@@ -109,8 +109,30 @@ alreadyexists() {
   else
     return 1
   fi
-  
 }
+
+#descendent() {
+##  number=`zfs list -rH $1 | wc -l | tr -d ' '`
+##  echo $number
+##  if [ $number -ne 1 ]
+##  then
+##    return 1
+##  else
+##    return 0
+##  fi
+##  log "Check descendent" 
+##  log "zfs list -rH $2 | grep $1"
+#  zfs list -rH $2 | grep $1 > /dev/null  
+#  EL=$?
+#  if [ $EL -eq 0 ]
+#  then
+##    log "$1 is a descendent dataset of $2"
+#    return 0
+#  else
+##    log "$1 is NOT a descendent dataset of $2"
+#    return 1
+#  fi
+#}
 
 remoteexists() {
 
@@ -163,7 +185,6 @@ zfssend() {
   else 
 
     log "...This is not the first send, going on"
-
 
     if zfs list -H -o name -t snapshot | sort | grep "$zfs@$YESTERDAY" > /dev/null; then
       log "...Yesterday snapshot, $zfs@$YESTERDAY, exists lets proceed with backup"
@@ -219,7 +240,8 @@ backupzfs() {
   else
 
     log "..Taking today snapshot of $zfs_filesystem@$TODAY"
-    zfs snapshot -r $zfs_filesystem@$TODAY
+#    zfs snapshot -r $zfs_filesystem@$TODAY
+    zfs snapshot $zfs_filesystem@$TODAY
     EL=$?
     if [ $EL -ne 0 ]
     then 
@@ -300,6 +322,15 @@ backupzfs() {
     let count=$count+1
 
     log "..Working on dataset $dataset"
+
+#    if descendent $dataset $zfs_filesystem
+#    then
+#      log "..$dataset is a descendent, we already have a backup since we use zfs snapshot -r <zone_zfs>"
+#      log "...let's move on"
+#      continue
+#    else
+#      log "..$dataset is not a descendent dataset, let's move on"
+#    fi
 
     if alreadyexists $dataset@$TODAY
     then
