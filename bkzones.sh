@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Ver 0.0.9
+# Ver 0.0.10
 
 
 #
@@ -172,7 +172,6 @@ zfssend() {
 
     log "...Maybe this is the first time transfer for $destinationpool/$strip"
     log "...Let's proceed with non incremental send"
-
     zfs send $zfs@$TODAY | ssh $sshparam zfs receive -v $destinationpool/$strip &> >(log)
     EL=$?
 
@@ -188,7 +187,6 @@ zfssend() {
 
     if zfs list -H -o name -t snapshot | sort | grep "$zfs@$YESTERDAY" > /dev/null; then
       log "...Yesterday snapshot, $zfs@$YESTERDAY, exists lets proceed with backup"
-echo " --- zfs send -i $zfs@$YESTERDAY $zfs@$TODAY | ssh $sshparam zfs receive -Fv $destinationpool/$strip"
       zfs send -i $zfs@$YESTERDAY $zfs@$TODAY | ssh $sshparam zfs receive -Fv $destinationpool/$strip &> >(log)
       EL=$?
 
@@ -199,7 +197,7 @@ echo " --- zfs send -i $zfs@$YESTERDAY $zfs@$TODAY | ssh $sshparam zfs receive -
       fi
    
       log "...zfs backup completed, destroying yesterday snapshot $zfs@$YESTERDAY"
-      zfs destroy -r $zfs@$YESTERDAY &> >(log)
+      zfs destroy $zfs@$YESTERDAY &> >(log)
       EL=$?
 
       if [ $EL -ne 0 ]
