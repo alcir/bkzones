@@ -20,5 +20,6 @@ Note: listallvmzfs.sh script must be installed inside each global zone that will
 
 Usage
 ./listavmszfs.sh [-t]
+
     -h  : this help
     -t  : don't print the GZ name before the ZFS list
