@@ -16,6 +16,7 @@ Usage
 ## listavmszfs.sh
 
 Remotely connect using SSH and keys to a defined list of servers (defined inside the script itself) and launch the listallvmzfs.sh script inside each GZ. Then return the list of ZFS filesystems associated to each VM.
+Note: listallvmzfs.sh script must be installed inside each global zone that will be contacted.
 
 Usage
 ./listavmszfs.sh [-t]
