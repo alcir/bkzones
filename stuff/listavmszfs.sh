@@ -19,7 +19,7 @@ then
 	
 	else
 
-		print "usage: listavms.sh [-t]"
+		print "usage: listavmszfs.sh [-t]"
 
 	fi
 
