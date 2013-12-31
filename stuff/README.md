@@ -5,8 +5,8 @@
 
 Print a list of all the ZFS file systems associated to all the virtual machines in a SmartOS global zone
 
-Usage
-./listallvmzfs.sh [-s<0|1>] [-v] [-h]
+Usage \
+'''./listallvmzfs.sh [-s<0|1>] [-v] [-h]'''
  
     -v  : a little bit more verbose
     -s0 : for each ZFS filesystem (related to VMs) print also the snapshots
@@ -18,8 +18,8 @@ Usage
 Remotely connect using SSH and keys to a defined list of servers (defined inside the script itself) and launch the listallvmzfs.sh script inside each GZ. Then return the list of ZFS filesystems associated to each VM.
 Note: listallvmzfs.sh script must be installed inside each global zone that will be contacted.
 
-Usage
-./listavmszfs.sh [-t]
+Usage \
+'''./listavmszfs.sh [-t]'''
 
     -h  : this help
     -t  : don't print the GZ name before the ZFS list
