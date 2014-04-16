@@ -55,7 +55,7 @@ TIMESTAMPTODATE=`$perl -e 'use POSIX qw(strftime); print strftime "%Y%m%d",local
 echo "Today $TODAY - timestamp $TODAYTIMESTAMP"
 echo "Oldest $TIMESTAMPTODATE - timestamp $OLDESTTIMESTAMP"
 echo ---
-echo "Creating list of snapshots oldest than $DAYS days ($DAYSTOSECONDS seconds), that is before $TIMESTAMPTODATE"
+echo "Creating list of snapshots older than $DAYS days ($DAYSTOSECONDS seconds), that is before $TIMESTAMPTODATE"
 echo ---
 
 count=0
